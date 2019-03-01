@@ -17,9 +17,26 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('products', function(){
-    $products = \App\Product::all();
+Route::group(['middleware' => 'auth:api'], function (){
 
-    return \App\Http\Resources\ProductResource::collection($products);
-//    return $products;
+    Route::get('products', function(){
+        $products = \App\Product::all();
+        return \App\Http\Resources\ProductResource::collection($products);
+    });
+
+    Route::get('products/{product}', function(\App\Product $product){
+        return new \App\Http\Resources\ProductResource($product);
+    });
+
+});
+
+Route::post('login', function (Request $request){
+    $data = $request->only('email', 'password');
+    $token = \Illuminate\Support\Facades\Auth::guard('api')->attempt($data);
+    if(!$token){
+        return response()->json([
+            'error' => 'Credentials invalid'
+        ], 400);
+    }
+    return ['token' => $token];
 });
